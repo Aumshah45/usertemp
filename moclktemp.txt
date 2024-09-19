@@ -1,0 +1,75 @@
+package com.service;
+
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.security.crypto.bcrypt.BCrypt;
+
+import com.dao.UserDao;
+import com.entity.UserEntity;
+import com.repo.UserRepo;
+
+class UserServiceTest {
+
+    @Mock
+    private UserDao userDao;
+
+    @Mock
+    private UserRepo userRepo;
+
+    @InjectMocks
+    private UserService userService;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);  // Initialize mocks
+    }
+
+    @Test
+    void testRegisterUser_Success() {
+      
+        UserEntity user = new UserEntity();
+        user.setEmail("testuser@example.com");
+        user.setPassword("testpassword");
+
+        when(userRepo.findByEmail(user.getEmail())).thenReturn(Optional.empty());
+        when(userDao.save(any(UserEntity.class))).thenReturn(user);
+
+        UserEntity registeredUser = userService.registerUser(user);
+
+      
+        assertNotNull(registeredUser);
+        assertNotEquals("testpassword", registeredUser.getPassword());
+        assertTrue(BCrypt.checkpw("testpassword", registeredUser.getPassword()));
+
+       
+        verify(userRepo, times(1)).findByEmail(user.getEmail());
+        verify(userDao, times(1)).save(any(UserEntity.class));
+    }
+
+    @Test
+    void testRegisterUser_UserAlreadyExists() {
+         UserEntity user = new UserEntity();
+        user.setEmail("testuser@example.com");
+
+        
+        when(userRepo.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+
+        
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            userService.registerUser(user);
+        });
+
+        assertEquals("User already exists", exception.getMessage());
+
+        
+        verify(userDao, never()).save(any(UserEntity.class));
+    }
+}
