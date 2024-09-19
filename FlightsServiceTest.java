@@ -129,18 +129,22 @@ public class FlightsServiceTest {
         verify(flightsDAOImpl).loadFlightsByAirlineCode(anyString());
     }
 
-    @Test
-    public void testCreateSeatAvailablity() {
-        Flights flight = new Flights();
-        FlightSeatAvailablity availablity = new FlightSeatAvailablity();
-        when(flightsRepo.getById(anyInt())).thenReturn(flight);
-        doNothing().when(flightSeatAvailablityRepo).save(any(FlightSeatAvailablity.class));
+ @Test
+public void testCreateSeatAvailablity() {
+    FlightSeatAvailablity seatAvailablity = new FlightSeatAvailablity();
+    Flights flight = new Flights();
 
-        flightsService.createSeatAvailablity(1, availablity);
-
-        verify(flightsRepo).getById(anyInt());
-        verify(flightSeatAvailablityRepo).save(any(FlightSeatAvailablity.class));
-    }
+    when(flightsRepo.getById(1)).thenReturn(flight);
+   
+    when(flightSeatAvailablityRepo.save(any(FlightSeatAvailablity.class))).thenAnswer(invocation -> {
+        FlightSeatAvailablity savedEntity = invocation.getArgument(0);
+        return savedEntity;  
+    });
+    
+    flightsService.createSeatAvailablity(1, seatAvailablity);
+   
+    verify(flightSeatAvailablityRepo, times(1)).save(any(FlightSeatAvailablity.class));
+}
 
     @Test
     public void testCreateFlightAndSeatAvailablity() {
