@@ -1,97 +1,24 @@
-package com.test; // Updated package to match the test structure
+@Service
+public class AuthService {
 
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
+    @Autowired
+    private UserRepo userRepo; // Directly using UserRepo here
 
-import java.util.Optional;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
-import com.entity.UserEntity;
-import com.service.AuthService;
-import com.dao.UserDao;
-
-class AuthServiceTest {
-
-    @Mock
-    private UserDao userDao;
-
-    @InjectMocks
-    private AuthService authService;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);  // Initialize mocks
-    }
-
-    @Test
-    void testLogin_Success() {
-        // Prepare mock data
-        String email = "testuser@example.com";
-        String password = "password";
-
-        // Assume the password is hashed
-        UserEntity user = new UserEntity();
-        user.setEmail(email);
-        user.setPassword("$2a$10$DowJonesPasswordHash"); // Assume a bcrypt hash
-
-        // Mock the behavior of userDao
-        when(userDao.findByEmail(email)).thenReturn(Optional.of(user));
-
-        // Call the method to test
-        String result = authService.login(email, password);
-
-        // Assert the response
-        assertEquals("Login successful", result);
-
-        // Verify that the method was called
-        verify(userDao, times(1)).findByEmail(email);
-    }
-
-    @Test
-    void testLogin_Failure_WrongPassword() {
-        // Prepare mock data
-        String email = "testuser@example.com";
-        String password = "wrongpassword";
-
-        // Assume the password is hashed
-        UserEntity user = new UserEntity();
-        user.setEmail(email);
-        user.setPassword("$2a$10$DowJonesPasswordHash"); // Assume a bcrypt hash
-
-        // Mock the behavior of userDao
-        when(userDao.findByEmail(email)).thenReturn(Optional.of(user));
-
-        // Call the method to test
-        String result = authService.login(email, password);
-
-        // Assert the response
-        assertEquals("Invalid credentials", result);
-
-        // Verify that the method was called
-        verify(userDao, times(1)).findByEmail(email);
-    }
-
-    @Test
-    void testLogin_Failure_UserNotFound() {
-        // Prepare mock data
-        String email = "testuser@example.com";
-        String password = "password";
-
-        // Mock the behavior of userDao
-        when(userDao.findByEmail(email)).thenReturn(Optional.empty());
-
-        // Call the method to test
-        String result = authService.login(email, password);
-
-        // Assert the response
-        assertEquals("Invalid credentials", result);
-
-        // Verify that the method was called
-        verify(userDao, times(1)).findByEmail(email);
+    public UserEntity loginUser(String email, String password) {
+        // Find user by email
+        Optional<UserEntity> userOptional = userRepo.findByEmail(email);
+        if (userOptional.isPresent()) {
+            UserEntity user = userOptional.get();
+            
+            // Check if the provided password matches the stored hashed password
+            if (BCrypt.checkpw(password, user.getPassword())) {
+                return user;
+            } else {
+                throw new RuntimeException("Invalid password");
+            }
+        } else {
+            throw new RuntimeException("User not found");
+        }
     }
 }
+
