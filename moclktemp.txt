@@ -1,31 +1,25 @@
-package com.service;
+package com.test; // Updated package to match the test structure
 
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
-
-import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.security.crypto.bcrypt.BCrypt;
 
-import com.dao.UserDao;
 import com.entity.UserEntity;
-import com.repo.UserRepo;
+import com.service.UserService;
+import com.controller.UserController;
 
-class UserServiceTest {
-
-    @Mock
-    private UserDao userDao;
+class UserControllerTest {
 
     @Mock
-    private UserRepo userRepo;
+    private UserService userService;
 
     @InjectMocks
-    private UserService userService;
+    private UserController userController;
 
     @BeforeEach
     void setUp() {
@@ -34,42 +28,39 @@ class UserServiceTest {
 
     @Test
     void testRegisterUser_Success() {
-      
+        // Prepare mock data
         UserEntity user = new UserEntity();
         user.setEmail("testuser@example.com");
-        user.setPassword("testpassword");
 
-        when(userRepo.findByEmail(user.getEmail())).thenReturn(Optional.empty());
-        when(userDao.save(any(UserEntity.class))).thenReturn(user);
+        // Mock service behavior
+        when(userService.registerUser(any(UserEntity.class))).thenReturn(user);
 
-        UserEntity registeredUser = userService.registerUser(user);
+        // Call the method to test
+        String response = userController.registerUser(user);
 
-      
-        assertNotNull(registeredUser);
-        assertNotEquals("testpassword", registeredUser.getPassword());
-        assertTrue(BCrypt.checkpw("testpassword", registeredUser.getPassword()));
+        // Assert the response
+        assertEquals("User registered successfully", response);
 
-       
-        verify(userRepo, times(1)).findByEmail(user.getEmail());
-        verify(userDao, times(1)).save(any(UserEntity.class));
+        // Verify the interaction with the service
+        verify(userService, times(1)).registerUser(user);
     }
 
     @Test
     void testRegisterUser_UserAlreadyExists() {
-         UserEntity user = new UserEntity();
+        // Prepare mock data
+        UserEntity user = new UserEntity();
         user.setEmail("testuser@example.com");
 
-        
-        when(userRepo.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        // Mock service behavior to throw an exception
+        when(userService.registerUser(any(UserEntity.class))).thenThrow(new RuntimeException("User already exists"));
 
-        
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            userService.registerUser(user);
-        });
+        // Call the method and check the response
+        String response = userController.registerUser(user);
 
-        assertEquals("User already exists", exception.getMessage());
+        // Assert the response
+        assertEquals("User already exists", response);
 
-        
-        verify(userDao, never()).save(any(UserEntity.class));
+        // Verify the interaction with the service
+        verify(userService, times(1)).registerUser(user);
     }
 }
