@@ -1,24 +1,103 @@
-@Service
-public class AuthService {
+package com.test;
 
-    @Autowired
-    private UserRepo userRepo; // Directly using UserRepo here
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-    public UserEntity loginUser(String email, String password) {
-        // Find user by email
-        Optional<UserEntity> userOptional = userRepo.findByEmail(email);
-        if (userOptional.isPresent()) {
-            UserEntity user = userOptional.get();
-            
-            // Check if the provided password matches the stored hashed password
-            if (BCrypt.checkpw(password, user.getPassword())) {
-                return user;
-            } else {
-                throw new RuntimeException("Invalid password");
-            }
-        } else {
-            throw new RuntimeException("User not found");
-        }
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.security.crypto.bcrypt.BCrypt;
+
+import com.entity.UserEntity;
+import com.repo.UserRepo;
+import com.service.AuthService;
+
+class AuthServiceTest {
+
+    @Mock
+    private UserRepo userRepo;  // Mocking UserRepo
+
+    @InjectMocks
+    private AuthService authService;  // Injecting AuthService
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);  // Initialize mocks
+    }
+
+    @Test
+    void testLoginUser_Success() {
+        // Test data
+        String email = "testuser@example.com";
+        String password = "password";
+
+        // Mock user entity with hashed password
+        UserEntity user = new UserEntity();
+        user.setEmail(email);
+        user.setPassword(BCrypt.hashpw(password, BCrypt.gensalt()));  // Storing bcrypt hashed password
+
+        // Mock behavior of userRepo to return user when findByEmail is called
+        when(userRepo.findByEmail(email)).thenReturn(Optional.of(user));
+
+        // Call the method and expect success
+        UserEntity result = authService.loginUser(email, password);
+
+        // Assertions
+        assertNotNull(result);  // Should return the user entity
+        assertEquals(email, result.getEmail());  // Verify the email is correct
+
+        // Verify that userRepo's findByEmail was called once
+        verify(userRepo, times(1)).findByEmail(email);
+    }
+
+    @Test
+    void testLoginUser_Failure_WrongPassword() {
+        // Test data
+        String email = "testuser@example.com";
+        String wrongPassword = "wrongpassword";
+
+        // Mock user entity with a different (correct) password
+        UserEntity user = new UserEntity();
+        user.setEmail(email);
+        user.setPassword(BCrypt.hashpw("correctpassword", BCrypt.gensalt()));  // Hashed correct password
+
+        // Mock behavior of userRepo
+        when(userRepo.findByEmail(email)).thenReturn(Optional.of(user));
+
+        // Call the method and expect a RuntimeException
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            authService.loginUser(email, wrongPassword);  // Call with wrong password
+        });
+
+        // Assertions
+        assertEquals("Invalid password", exception.getMessage());
+
+        // Verify that userRepo's findByEmail was called once
+        verify(userRepo, times(1)).findByEmail(email);
+    }
+
+    @Test
+    void testLoginUser_Failure_UserNotFound() {
+        // Test data
+        String email = "nonexistentuser@example.com";
+        String password = "password";
+
+        // Mock behavior of userRepo to return an empty Optional when user is not found
+        when(userRepo.findByEmail(email)).thenReturn(Optional.empty());
+
+        // Call the method and expect a RuntimeException
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            authService.loginUser(email, password);
+        });
+
+        // Assertions
+        assertEquals("User not found", exception.getMessage());
+
+        // Verify that userRepo's findByEmail was called once
+        verify(userRepo, times(1)).findByEmail(email);
     }
 }
-
