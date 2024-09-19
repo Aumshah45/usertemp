@@ -3,6 +3,8 @@ package com.test; // Updated package to match the test structure
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -10,16 +12,16 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import com.entity.UserEntity;
-import com.service.UserService;
-import com.controller.UserController;
+import com.service.AuthService;
+import com.dao.UserDao;
 
-class UserControllerTest {
+class AuthServiceTest {
 
     @Mock
-    private UserService userService;
+    private UserDao userDao;
 
     @InjectMocks
-    private UserController userController;
+    private AuthService authService;
 
     @BeforeEach
     void setUp() {
@@ -27,40 +29,69 @@ class UserControllerTest {
     }
 
     @Test
-    void testRegisterUser_Success() {
+    void testLogin_Success() {
         // Prepare mock data
-        UserEntity user = new UserEntity();
-        user.setEmail("testuser@example.com");
+        String email = "testuser@example.com";
+        String password = "password";
 
-        // Mock service behavior
-        when(userService.registerUser(any(UserEntity.class))).thenReturn(user);
+        // Assume the password is hashed
+        UserEntity user = new UserEntity();
+        user.setEmail(email);
+        user.setPassword("$2a$10$DowJonesPasswordHash"); // Assume a bcrypt hash
+
+        // Mock the behavior of userDao
+        when(userDao.findByEmail(email)).thenReturn(Optional.of(user));
 
         // Call the method to test
-        String response = userController.registerUser(user);
+        String result = authService.login(email, password);
 
         // Assert the response
-        assertEquals("User registered successfully", response);
+        assertEquals("Login successful", result);
 
-        // Verify the interaction with the service
-        verify(userService, times(1)).registerUser(user);
+        // Verify that the method was called
+        verify(userDao, times(1)).findByEmail(email);
     }
 
     @Test
-    void testRegisterUser_UserAlreadyExists() {
+    void testLogin_Failure_WrongPassword() {
         // Prepare mock data
+        String email = "testuser@example.com";
+        String password = "wrongpassword";
+
+        // Assume the password is hashed
         UserEntity user = new UserEntity();
-        user.setEmail("testuser@example.com");
+        user.setEmail(email);
+        user.setPassword("$2a$10$DowJonesPasswordHash"); // Assume a bcrypt hash
 
-        // Mock service behavior to throw an exception
-        when(userService.registerUser(any(UserEntity.class))).thenThrow(new RuntimeException("User already exists"));
+        // Mock the behavior of userDao
+        when(userDao.findByEmail(email)).thenReturn(Optional.of(user));
 
-        // Call the method and check the response
-        String response = userController.registerUser(user);
+        // Call the method to test
+        String result = authService.login(email, password);
 
         // Assert the response
-        assertEquals("User already exists", response);
+        assertEquals("Invalid credentials", result);
 
-        // Verify the interaction with the service
-        verify(userService, times(1)).registerUser(user);
+        // Verify that the method was called
+        verify(userDao, times(1)).findByEmail(email);
+    }
+
+    @Test
+    void testLogin_Failure_UserNotFound() {
+        // Prepare mock data
+        String email = "testuser@example.com";
+        String password = "password";
+
+        // Mock the behavior of userDao
+        when(userDao.findByEmail(email)).thenReturn(Optional.empty());
+
+        // Call the method to test
+        String result = authService.login(email, password);
+
+        // Assert the response
+        assertEquals("Invalid credentials", result);
+
+        // Verify that the method was called
+        verify(userDao, times(1)).findByEmail(email);
     }
 }
