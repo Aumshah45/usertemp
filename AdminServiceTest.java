@@ -58,7 +58,7 @@ public class AdminServiceTest {
     @Test
     public void testLoadFlightByAirlineCode() {
         List<Flights> flights = new ArrayList<>();
-        // Add mock flights if needed
+        // Add mock flights 
         when(webClient.get()).thenReturn(requestHeadersUriSpec);
         when(requestHeadersUriSpec.uri(anyString(), anyString())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
