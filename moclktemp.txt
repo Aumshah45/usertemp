@@ -1,1 +1,1 @@
-Develop a web-based airline reservation application that allows users to search for flights, manage bookings, and view offers, while enabling airline operators to manage their routes and fares, and administrators to oversee the platform and handle promotions.
+Create a scalable and secure airline reservation system that addresses the challenges of booking flights, managing airline data, and handling user interactions, ensuring a seamless experience for users, airline operators, and administrators.
