@@ -1,1 +1,7 @@
-Create a scalable and secure airline reservation system that addresses the challenges of booking flights, managing airline data, and handling user interactions, ensuring a seamless experience for users, airline operators, and administrators.
+Sure! Here’s a breakdown of the objective into three bullet points:
+
+- **User Experience:** Develop a user-friendly web application that allows users to search for flights, view available routes, and manage their bookings while accessing relevant offers and discounts.
+  
+- **Management Tools:** Provide functionality for airline operators to add, update, and manage flight information, including routes and fares, while enabling administrators to oversee the platform and manage promotional activities.
+
+- **Security and Scalability:** Ensure robust security measures for user authentication and data protection, and design a scalable system to handle increasing user and data loads efficiently.
